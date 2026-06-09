@@ -5,6 +5,7 @@ import { router } from 'expo-router';
 import Header from '../components/Header';
 import { COLORS } from '../constants/colors';
 import { signOut } from '../services/auth';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function SettingsScreen() {
   const [biometric, setBiometric] = useState(true);

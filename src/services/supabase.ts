@@ -2,8 +2,12 @@
 import { createClient } from '@supabase/supabase-js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const SUPABASE_URL = 'https://yekyumjgdcfvcnumatzk.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlla3l1bWpnZGNmdmNudW1hdHprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5NjU5NzQsImV4cCI6MjA5NjU0MTk3NH0.-FUPgg6W-CogKfdbz0AMiFDnUD7tzaz98WzF88OwNkY';
+const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL!;
+const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!;
+
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  throw new Error('Faltan las variables de entorno de Supabase. Revisá tu archivo .env');
+}
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
@@ -12,4 +16,4 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     persistSession: true,
     detectSessionInUrl: false,
   },
-}); 
+});

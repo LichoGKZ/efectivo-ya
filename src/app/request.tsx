@@ -1,10 +1,26 @@
 // src/app/request.tsx
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import { useEffect, useState } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
 import Header from '../components/Header';
 import Button from '../components/Button';
 import { supabase } from '../services/supabase';
 import { COLORS } from '../constants/colors';
+import { Ionicons } from '@expo/vector-icons';
+
+// Importamos el mapa y el hook de forma lazy para no crashear si no están instalados
+let MapViewComponent: any = null;
+let useCurrentLocation: any = null;
+let geocodeAddress: any = null;
+
+try {
+  MapViewComponent = require('../components/MapViewComponent').default;
+  const loc = require('../hooks/useLocation');
+  useCurrentLocation = loc.useCurrentLocation;
+  geocodeAddress = loc.geocodeAddress;
+} catch (e) {
+  // react-native-maps o expo-location no están instalados todavía
+}
 
 const TYPE_LABELS: Record<string, string> = {
   retiro_domicilio: 'Retiro en domicilio',
@@ -16,50 +32,102 @@ const TYPE_LABELS: Record<string, string> = {
 const AMOUNT = 150000;
 const COMMISSION = 3000;
 const TOTAL = AMOUNT + COMMISSION;
+const DESTINATION_ADDRESS = 'San Martín 2450, Buenos Aires, Argentina';
+
+type LatLng = { latitude: number; longitude: number };
 
 export default function RequestScreen() {
   const { type } = useLocalSearchParams<{ type: string }>();
   const opLabel = TYPE_LABELS[type ?? ''] ?? 'Entrega de efectivo';
 
+  const [userLocation, setUserLocation] = useState<LatLng | null>(null);
+  const [destCoord, setDestCoord] = useState<LatLng | null>(null);
+  const [mapReady, setMapReady] = useState(false);
+  const [mapsAvailable] = useState(() => !!MapViewComponent && !!useCurrentLocation);
+
+  useEffect(() => {
+    if (!mapsAvailable) return;
+
+    // Obtener ubicación actual
+    const getLocation = async () => {
+      try {
+        const Location = require('expo-location');
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status === 'granted') {
+          const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+          setUserLocation({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
+        }
+      } catch (e) {
+        console.warn('[request] No se pudo obtener ubicación:', e);
+      }
+    };
+
+    // Geocodificar destino
+    const getDestination = async () => {
+      if (!geocodeAddress) return;
+      try {
+        const coord = await geocodeAddress(DESTINATION_ADDRESS);
+        if (coord) setDestCoord(coord);
+      } catch (e) {
+        // Sin key configurada, ignorar
+      }
+    };
+
+    Promise.all([getLocation(), getDestination()]).finally(() => setMapReady(true));
+  }, [mapsAvailable]);
+
   const handleConfirm = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const { data, error } = await supabase
-      .from('operations')
-      .insert({
-        user_id: user.id,
-        type: type ?? 'entrega_direccion',
-        status: 'buscando_operador',
-        amount: AMOUNT,
-        origin: 'Av. Colón 1234, CABA',
-        destination: 'San Martín 2450, CABA',
-        service_category: 'auto_estandar',
-        commission: COMMISSION,
-        total: TOTAL,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error creando operación:', error);
-      return;
-    }
+    await supabase.from('operations').insert({
+      user_id: user.id,
+      type: type ?? 'entrega_direccion',
+      status: 'buscando_operador',
+      amount: AMOUNT,
+      origin: 'Tu ubicación actual',
+      destination: DESTINATION_ADDRESS,
+      service_category: 'auto_estandar',
+      commission: COMMISSION,
+      total: TOTAL,
+    });
 
     router.push('/service-select');
   };
+
+  const markers = [
+    ...(userLocation ? [{ coordinate: userLocation, type: 'origin' as const, title: 'Tu ubicación' }] : []),
+    ...(destCoord ? [{ coordinate: destCoord, type: 'destination' as const, title: 'Destino' }] : []),
+  ];
 
   return (
     <View style={{ flex: 1, backgroundColor: COLORS.background }}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Header title="Confirmar solicitud" showBack />
 
-        <View style={styles.mapPlaceholder}>
-          <Text style={styles.mapLabel}>🗺️ Mapa (próximamente)</Text>
+        {/* Mapa */}
+        <View style={styles.mapContainer}>
+          {!mapsAvailable ? (
+            // Placeholder si react-native-maps no está instalado
+            <View style={styles.mapPlaceholder}>
+              <Text style={styles.mapLabel}>🗺️ Mapa (instalá react-native-maps)</Text>
+            </View>
+          ) : !mapReady ? (
+            <View style={styles.mapPlaceholder}>
+              <ActivityIndicator color={COLORS.primary} />
+              <Text style={styles.mapLoadingText}>Cargando mapa...</Text>
+            </View>
+          ) : (
+            <MapViewComponent
+              markers={markers}
+              showRoute={markers.length >= 2}
+              style={styles.map}
+            />
+          )}
         </View>
 
         <View style={styles.infoSection}>
-          <InfoRow icon="🟢" label="Ubicación de retiro" value="Av. Colón 1234, CABA" />
+          <InfoRow icon="🟢" label="Ubicación de retiro" value="Tu ubicación actual" />
           <InfoRow icon="🔴" label="Destino" value="San Martín 2450, CABA" />
           <InfoRow icon="📋" label="Tipo de operación" value={opLabel} />
           <InfoRow icon="💰" label="Monto a enviar" value={`$${AMOUNT.toLocaleString('es-AR')}`} />
@@ -89,12 +157,17 @@ function InfoRow({ icon, label, value }: { icon: string; label: string; value: s
 
 const styles = StyleSheet.create({
   scroll: { paddingHorizontal: 20, paddingTop: 56, paddingBottom: 100 },
+  mapContainer: {
+    height: 220, borderRadius: 20, overflow: 'hidden',
+    marginBottom: 20, borderWidth: 1, borderColor: COLORS.primaryBorder,
+  },
+  map: { flex: 1 },
   mapPlaceholder: {
-    height: 200, borderRadius: 20, backgroundColor: COLORS.mapPlaceholder,
-    alignItems: 'center', justifyContent: 'center', marginBottom: 20,
-    borderWidth: 1, borderColor: COLORS.primaryBorder,
+    flex: 1, backgroundColor: COLORS.mapPlaceholder,
+    alignItems: 'center', justifyContent: 'center', gap: 10,
   },
   mapLabel: { fontSize: 15, color: COLORS.primaryDark },
+  mapLoadingText: { fontSize: 13, color: COLORS.primaryDark },
   infoSection: {
     backgroundColor: COLORS.background, borderRadius: 16,
     borderWidth: 1, borderColor: COLORS.border, overflow: 'hidden',

@@ -6,29 +6,30 @@ import BottomNavigation from '../components/BottomNavigation';
 import { getCurrentProfile } from '../services/auth';
 import { COLORS } from '../constants/colors';
 import { supabase } from '../services/supabase';
+import { Ionicons } from '@expo/vector-icons';
 
 const OPERATIONS = [
   {
     id: 'retiro_domicilio',
-    icon: '🏠',
+    icon: 'home',
     title: 'Retirar en mi domicilio',
     description: 'Un operador retira el dinero en tu ubicación',
   },
   {
     id: 'entrega_direccion',
-    icon: '📍',
+    icon: 'location',
     title: 'Entregar en una dirección',
     description: 'Un operador entrega a otra persona',
   },
   {
     id: 'transferencia',
-    icon: '🔄',
+    icon: 'swap-horizontal',
     title: 'Transferir efectivo',
     description: 'Entrega de dinero a un tercero',
   },
   {
     id: 'frecuentes',
-    icon: '⭐',
+    icon: 'star',
     title: 'Direcciones frecuentes',
     description: 'Accedé a tus direcciones guardadas',
   },
@@ -80,10 +81,14 @@ export default function HomeScreen() {
             )}
           </View>
           <TouchableOpacity style={styles.notifBtn}>
-            <Text style={styles.notifIcon}>🔔</Text>
+            <Ionicons
+              name="notifications-outline"
+              size={20}
+              color={COLORS.text}
+            />
           </TouchableOpacity>
         </View>
-
+            
         {/* Opciones de operación */}
         {OPERATIONS.map((op) => (
           <TouchableOpacity
@@ -93,16 +98,37 @@ export default function HomeScreen() {
             activeOpacity={0.85}
           >
             <View style={styles.opIcon}>
-              <Text style={styles.opIconText}>{op.icon}</Text>
+              <Ionicons
+                name={op.icon as any}
+                size={24}
+                color={COLORS.primary}
+              />
             </View>
             <View style={styles.opContent}>
               <Text style={styles.opTitle}>{op.title}</Text>
               <Text style={styles.opDesc}>{op.description}</Text>
             </View>
-            <Text style={styles.opArrow}>›</Text>
+            <Ionicons
+              name="chevron-forward"
+              size={20}
+              color={COLORS.textMuted}
+            />
           </TouchableOpacity>
         ))}
       </ScrollView>
+
+        {__DEV__ && (
+        <TouchableOpacity
+            style={{ position: 'absolute', top: 82, right: 68, padding: 8 }}
+            onPress={() => router.push('/dev')}
+        >
+            <Ionicons
+              name="construct"
+              size={18}
+              color={COLORS.text}
+            />
+        </TouchableOpacity>
+        )}
 
       <BottomNavigation />
     </View>

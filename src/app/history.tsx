@@ -6,6 +6,7 @@ import { useCallback } from 'react';
 import BottomNavigation from '../components/BottomNavigation';
 import { supabase } from '../services/supabase';
 import { COLORS } from '../constants/colors';
+import { Ionicons } from '@expo/vector-icons';
 
 type Operation = {
   id: string;

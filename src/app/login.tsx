@@ -7,6 +7,7 @@ import Input from '../components/Input';
 import Button from '../components/Button';
 import { supabase } from '../services/supabase';
 import { COLORS } from '../constants/colors';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -64,9 +65,12 @@ export default function LoginScreen() {
             secureTextEntry
             error={errors.password}
           />
-          <TouchableOpacity style={styles.forgotBtn}>
+            <TouchableOpacity
+            style={styles.forgotBtn}
+            onPress={() => router.push('/forgot-password')}
+            >
             <Text style={styles.forgotText}>¿Olvidaste tu contraseña?</Text>
-          </TouchableOpacity>
+            </TouchableOpacity>
           <View style={{ marginTop: 8 }}>
             <Button title="Iniciar sesión" onPress={handleLogin} loading={loading} />
           </View>

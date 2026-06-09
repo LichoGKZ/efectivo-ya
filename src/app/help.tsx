@@ -2,6 +2,7 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import BottomNavigation from '../components/BottomNavigation';
 import { COLORS } from '../constants/colors';
+import { Ionicons } from '@expo/vector-icons';
 
 const HELP_TOPICS = [
   { icon: '💸', label: 'Operaciones y tarifas' },

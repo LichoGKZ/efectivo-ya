@@ -8,6 +8,7 @@ import Button from '../components/Button';
 import Header from '../components/Header';
 import { supabase } from '../services/supabase';
 import { COLORS } from '../constants/colors';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function RegisterScreen() {
   const [name, setName] = useState('');

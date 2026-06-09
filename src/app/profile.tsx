@@ -6,6 +6,7 @@ import BottomNavigation from '../components/BottomNavigation';
 import { supabase } from '../services/supabase';
 import { getCurrentProfile, signOut } from '../services/auth';
 import { COLORS } from '../constants/colors';
+import { Ionicons } from '@expo/vector-icons';
 
 type Profile = {
   id: string;

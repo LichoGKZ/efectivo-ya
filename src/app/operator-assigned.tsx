@@ -1,19 +1,59 @@
-// src/app/operator-assigned.tsx  — Pantalla 7: Operador asignado
+// src/app/operator-assigned.tsx
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { useState } from 'react';
 import { router } from 'expo-router';
 import OperatorCard from '../components/OperatorCard';
+import MapViewComponent, { LatLng, MapMarker } from '../components/MapViewComponent';
+import { useCurrentLocation } from '../hooks/useLocation';
+import { supabase } from '../services/supabase';
 import { COLORS } from '../constants/colors';
+import { Ionicons } from '@expo/vector-icons';
+
+// Posición simulada del operador (en el futuro vendrá de la DB en tiempo real)
+const SIMULATED_OPERATOR: LatLng = {
+  latitude: -34.5985,
+  longitude: -58.3896,
+};
 
 export default function OperatorAssignedScreen() {
+  const { current: userLocation } = useCurrentLocation();
+  const [operatorLocation, setOperatorLocation] = useState<LatLng>(SIMULATED_OPERATOR);
+
+  // En el futuro: suscribirse a cambios de location del operador desde Supabase
+  // Por ahora usamos posición simulada
+
+  const markers: MapMarker[] = [
+    ...(userLocation
+      ? [{ coordinate: userLocation, type: 'origin' as const, title: 'Tu ubicación' }]
+      : []),
+    { coordinate: operatorLocation, type: 'operator' as const, title: 'Operador' },
+  ];
+
   return (
     <View style={styles.container}>
-      {/* Mapa */}
+      {/* Mapa con ubicación del operador */}
       <View style={styles.mapArea}>
-        <View style={styles.mapPlaceholder}>
-          <Text style={styles.mapLabel}>🗺️ Ruta del operador</Text>
-        </View>
+        <MapViewComponent
+          markers={markers}
+          showRoute
+          style={StyleSheet.absoluteFillObject}
+          initialRegion={
+            userLocation
+              ? {
+                  latitude: (userLocation.latitude + operatorLocation.latitude) / 2,
+                  longitude: (userLocation.longitude + operatorLocation.longitude) / 2,
+                  latitudeDelta: 0.04,
+                  longitudeDelta: 0.04,
+                }
+              : {
+                  ...operatorLocation,
+                  latitudeDelta: 0.03,
+                  longitudeDelta: 0.03,
+                }
+          }
+        />
 
-        {/* Pill superior */}
+        {/* Pill de estado flotante */}
         <View style={styles.statusPill}>
           <View style={styles.statusDot} />
           <Text style={styles.statusText}>Tu operador está en camino</Text>
@@ -36,10 +76,7 @@ export default function OperatorAssignedScreen() {
           <TouchableOpacity style={styles.secondaryBtn} onPress={() => {}}>
             <Text style={styles.secondaryText}>🔗 Compartir</Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.cancelBtn}
-            onPress={() => router.replace('/home')}
-          >
+          <TouchableOpacity style={styles.cancelBtn} onPress={() => router.replace('/home')}>
             <Text style={styles.cancelText}>Cancelar operación</Text>
           </TouchableOpacity>
         </View>
@@ -54,14 +91,11 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.mapPlaceholder,
     position: 'relative',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
-  mapPlaceholder: { alignItems: 'center' },
-  mapLabel: { fontSize: 15, color: COLORS.primaryDark },
   statusPill: {
     position: 'absolute',
     top: 20,
+    alignSelf: 'center',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
@@ -70,21 +104,12 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 999,
     shadowColor: '#000',
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.12,
     shadowRadius: 8,
     elevation: 4,
   },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: COLORS.primary,
-  },
-  statusText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: COLORS.text,
-  },
+  statusDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: COLORS.primary },
+  statusText: { fontSize: 13, fontWeight: '600', color: COLORS.text },
   bottomSheet: {
     padding: 20,
     paddingBottom: 36,
@@ -96,11 +121,7 @@ const styles = StyleSheet.create({
     shadowRadius: 16,
     elevation: 8,
   },
-  actions: {
-    flexDirection: 'row',
-    gap: 10,
-    marginTop: 12,
-  },
+  actions: { flexDirection: 'row', gap: 10, marginTop: 12 },
   secondaryBtn: {
     flex: 1,
     paddingVertical: 12,
@@ -110,11 +131,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: COLORS.surface,
   },
-  secondaryText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.text,
-  },
+  secondaryText: { fontSize: 14, fontWeight: '600', color: COLORS.text },
   cancelBtn: {
     flex: 1,
     paddingVertical: 12,
@@ -124,9 +141,5 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.border,
   },
-  cancelText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.error,
-  },
+  cancelText: { fontSize: 14, fontWeight: '600', color: COLORS.error },
 });

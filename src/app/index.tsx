@@ -5,6 +5,7 @@ import Screen from '../components/Screen';
 import Button from '../components/Button';
 import { COLORS } from '../constants/colors';
 import Svg, { Path, Circle, Text as SvgText } from 'react-native-svg';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function WelcomeScreen() {
   return (
@@ -54,13 +55,25 @@ export default function WelcomeScreen() {
 
           <View style={styles.socialRow}>
             <TouchableOpacity style={styles.socialBtn}>
-              <Text style={styles.socialIcon}>G</Text>
+              <Ionicons
+                name="logo-google"
+                size={24}
+                color={COLORS.text}
+              />
             </TouchableOpacity>
             <TouchableOpacity style={styles.socialBtn}>
-              <Text style={styles.socialIcon}>🍎</Text>
+              <Ionicons
+                name="logo-apple"
+                size={24}
+                color={COLORS.text}
+              />
             </TouchableOpacity>
             <TouchableOpacity style={styles.socialBtn}>
-              <Text style={styles.socialIcon}>📞</Text>
+              <Ionicons
+                name="call-outline"
+                size={22}
+                color={COLORS.text}
+              />
             </TouchableOpacity>
           </View>
         </View>
