@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import BottomNavigation from '../components/BottomNavigation';
 import { getCurrentProfile } from '../services/auth';
 import { COLORS } from '../constants/colors';
+import { supabase } from '../services/supabase';
 
 const OPERATIONS = [
   {
@@ -38,10 +39,24 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getCurrentProfile().then((p) => {
-      setProfile(p);
-      setLoading(false);
-    });
+    const load = async () => {
+      try {
+        const p = await getCurrentProfile();
+        // Si no hay perfil todavía, intentar leer el nombre desde auth metadata
+        if (!p) {
+          const { data: { user } } = await supabase.auth.getUser();
+          const metaName = user?.user_metadata?.full_name ?? null;
+          setProfile({ full_name: metaName });
+        } else {
+          setProfile(p);
+        }
+      } catch {
+        setProfile(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
   }, []);
 
   const firstName = profile?.full_name?.split(' ')[0] ?? 'Usuario';

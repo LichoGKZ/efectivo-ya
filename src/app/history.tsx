@@ -1,10 +1,24 @@
-// src/app/history.tsx  — Pantalla 12: Historial de operaciones
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+// src/app/history.tsx
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useEffect, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
+import { useCallback } from 'react';
 import BottomNavigation from '../components/BottomNavigation';
-import { getData } from '../services/storage';
+import { supabase } from '../services/supabase';
 import { COLORS } from '../constants/colors';
-import type { Operation } from '../types';
+
+type Operation = {
+  id: string;
+  type: string;
+  status: string;
+  amount: number;
+  origin: string;
+  destination: string;
+  service_category: string;
+  commission: number;
+  total: number;
+  created_at: string;
+};
 
 const TYPE_ICON: Record<string, string> = {
   retiro_domicilio: '🏠',
@@ -14,48 +28,45 @@ const TYPE_ICON: Record<string, string> = {
 };
 
 const TYPE_LABEL: Record<string, string> = {
-  retiro_domicilio: 'Entrega de efectivo',
-  entrega_direccion: 'Retiro de efectivo',
+  retiro_domicilio: 'Retiro en domicilio',
+  entrega_direccion: 'Entrega en dirección',
   transferencia: 'Transferencia',
   frecuentes: 'Dirección frecuente',
 };
 
+function formatDate(iso: string) {
+  const d = new Date(iso);
+  return d.toLocaleDateString('es-AR', {
+    day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
+  });
+}
+
 export default function HistoryScreen() {
   const [tab, setTab] = useState<'completadas' | 'canceladas'>('completadas');
   const [operations, setOperations] = useState<Operation[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadHistory();
-  }, []);
+  // Recarga cada vez que la pantalla toma foco
+  useFocusEffect(
+    useCallback(() => {
+      loadHistory();
+    }, [])
+  );
 
   const loadHistory = async () => {
-    const data = (await getData<Operation[]>('requests')) || [];
-    setOperations(data.reverse());
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('operations')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (!error && data) setOperations(data);
+    setLoading(false);
   };
 
-  // Mock data para demostración
-  const MOCK: Operation[] = [
-    {
-      id: '1', type: 'entrega_direccion', status: 'entregado',
-      amount: 150000, origin: 'Av. Colón', destination: 'San Martín',
-      serviceCategory: 'auto_estandar', commission: 3000, total: 153000,
-      date: 'Hoy, 10:15 AM',
-    },
-    {
-      id: '2', type: 'retiro_domicilio', status: 'entregado',
-      amount: 80000, origin: 'Belgrano', destination: 'Palermo',
-      serviceCategory: 'moto', commission: 1500, total: 81500,
-      date: 'Ayer, 4:30 PM',
-    },
-    {
-      id: '3', type: 'transferencia', status: 'entregado',
-      amount: 25000, origin: 'Recoleta', destination: 'Caballito',
-      serviceCategory: 'moto', commission: 800, total: 25800,
-      date: '23 May, 2:10 PM',
-    },
-  ];
-
-  const displayData = operations.length > 0 ? operations : MOCK;
+  const completadas = operations.filter((o) => o.status === 'entregado');
+  const canceladas = operations.filter((o) => o.status === 'cancelado');
+  const displayData = tab === 'completadas' ? completadas : canceladas;
 
   return (
     <View style={{ flex: 1, backgroundColor: COLORS.background }}>
@@ -77,9 +88,14 @@ export default function HistoryScreen() {
           ))}
         </View>
 
-        {/* Items */}
-        {tab === 'canceladas' ? (
-          <Text style={styles.emptyText}>No hay operaciones canceladas</Text>
+        {loading ? (
+          <ActivityIndicator color={COLORS.primary} style={{ marginTop: 40 }} />
+        ) : displayData.length === 0 ? (
+          <Text style={styles.emptyText}>
+            {tab === 'completadas'
+              ? 'No hay operaciones completadas todavía'
+              : 'No hay operaciones canceladas'}
+          </Text>
         ) : (
           displayData.map((op) => (
             <View key={op.id} style={styles.opItem}>
@@ -88,7 +104,7 @@ export default function HistoryScreen() {
               </View>
               <View style={styles.opInfo}>
                 <Text style={styles.opLabel}>{TYPE_LABEL[op.type] ?? 'Operación'}</Text>
-                <Text style={styles.opDate}>{op.date}</Text>
+                <Text style={styles.opDate}>{formatDate(op.created_at)}</Text>
               </View>
               <Text style={styles.opAmount}>
                 ${op.amount.toLocaleString('es-AR')}
@@ -103,81 +119,30 @@ export default function HistoryScreen() {
 }
 
 const styles = StyleSheet.create({
-  scroll: {
-    paddingHorizontal: 20,
-    paddingTop: 56,
-    paddingBottom: 100,
-  },
-  pageTitle: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: COLORS.text,
-    marginBottom: 20,
-  },
+  scroll: { paddingHorizontal: 20, paddingTop: 56, paddingBottom: 100 },
+  pageTitle: { fontSize: 22, fontWeight: '800', color: COLORS.text, marginBottom: 20 },
   tabs: {
-    flexDirection: 'row',
-    backgroundColor: COLORS.surface,
-    borderRadius: 12,
-    padding: 4,
-    marginBottom: 20,
+    flexDirection: 'row', backgroundColor: COLORS.surface,
+    borderRadius: 12, padding: 4, marginBottom: 20,
   },
-  tabBtn: {
-    flex: 1,
-    paddingVertical: 9,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
+  tabBtn: { flex: 1, paddingVertical: 9, borderRadius: 10, alignItems: 'center' },
   tabBtnActive: {
     backgroundColor: COLORS.background,
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, elevation: 2,
   },
-  tabLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: COLORS.textMuted,
-  },
-  tabLabelActive: {
-    color: COLORS.text,
-  },
+  tabLabel: { fontSize: 13, fontWeight: '600', color: COLORS.textMuted },
+  tabLabelActive: { color: COLORS.text },
   opItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.divider,
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.divider,
   },
   opIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 10,
-    backgroundColor: COLORS.primaryLight,
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: 44, height: 44, borderRadius: 10,
+    backgroundColor: COLORS.primaryLight, alignItems: 'center', justifyContent: 'center',
   },
   opInfo: { flex: 1 },
-  opLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.text,
-  },
-  opDate: {
-    fontSize: 12,
-    color: COLORS.textMuted,
-    marginTop: 2,
-  },
-  opAmount: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: COLORS.text,
-  },
-  emptyText: {
-    textAlign: 'center',
-    color: COLORS.textMuted,
-    marginTop: 40,
-    fontSize: 14,
-  },
+  opLabel: { fontSize: 14, fontWeight: '600', color: COLORS.text },
+  opDate: { fontSize: 12, color: COLORS.textMuted, marginTop: 2 },
+  opAmount: { fontSize: 15, fontWeight: '700', color: COLORS.text },
+  emptyText: { textAlign: 'center', color: COLORS.textMuted, marginTop: 40, fontSize: 14 },
 });
