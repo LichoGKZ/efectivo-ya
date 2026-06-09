@@ -1,8 +1,9 @@
-// src/app/home.tsx  — Pantalla 3: Pantalla principal
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+// src/app/home.tsx
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
-import Screen from '../components/Screen';
+import { useEffect, useState } from 'react';
 import BottomNavigation from '../components/BottomNavigation';
+import { getCurrentProfile } from '../services/auth';
 import { COLORS } from '../constants/colors';
 
 const OPERATIONS = [
@@ -33,6 +34,18 @@ const OPERATIONS = [
 ];
 
 export default function HomeScreen() {
+  const [profile, setProfile] = useState<{ full_name: string | null } | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getCurrentProfile().then((p) => {
+      setProfile(p);
+      setLoading(false);
+    });
+  }, []);
+
+  const firstName = profile?.full_name?.split(' ')[0] ?? 'Usuario';
+
   return (
     <View style={{ flex: 1, backgroundColor: COLORS.background }}>
       <ScrollView
@@ -42,8 +55,14 @@ export default function HomeScreen() {
         {/* Header saludo */}
         <View style={styles.topBar}>
           <View>
-            <Text style={styles.greeting}>Hola, Juan 👋</Text>
-            <Text style={styles.subtitle}>¿Qué operación deseás realizar?</Text>
+            {loading ? (
+              <ActivityIndicator color={COLORS.primary} />
+            ) : (
+              <>
+                <Text style={styles.greeting}>Hola, {firstName} 👋</Text>
+                <Text style={styles.subtitle}>¿Qué operación deseás realizar?</Text>
+              </>
+            )}
           </View>
           <TouchableOpacity style={styles.notifBtn}>
             <Text style={styles.notifIcon}>🔔</Text>
@@ -70,7 +89,6 @@ export default function HomeScreen() {
         ))}
       </ScrollView>
 
-      {/* Bottom nav */}
       <BottomNavigation />
     </View>
   );
@@ -108,9 +126,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.border,
   },
-  notifIcon: {
-    fontSize: 18,
-  },
+  notifIcon: { fontSize: 18 },
   opCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -135,26 +151,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  opIconText: {
-    fontSize: 22,
-  },
-  opContent: {
-    flex: 1,
-    gap: 2,
-  },
-  opTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: COLORS.text,
-  },
-  opDesc: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
-    lineHeight: 16,
-  },
-  opArrow: {
-    fontSize: 20,
-    color: COLORS.textMuted,
-    fontWeight: '300',
-  },
+  opIconText: { fontSize: 22 },
+  opContent: { flex: 1, gap: 2 },
+  opTitle: { fontSize: 15, fontWeight: '700', color: COLORS.text },
+  opDesc: { fontSize: 12, color: COLORS.textSecondary, lineHeight: 16 },
+  opArrow: { fontSize: 20, color: COLORS.textMuted, fontWeight: '300' },
 });

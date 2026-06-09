@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { router } from 'expo-router';
 import Header from '../components/Header';
 import { COLORS } from '../constants/colors';
+import { signOut } from '../services/auth';
 
 export default function SettingsScreen() {
   const [biometric, setBiometric] = useState(true);
@@ -47,7 +48,7 @@ export default function SettingsScreen() {
 
         <TouchableOpacity
           style={styles.logoutBtn}
-          onPress={() => router.replace('/')}
+          onPress={async () => await signOut()}
         >
           <Text style={styles.logoutText}>🚪  Cerrar sesión</Text>
         </TouchableOpacity>

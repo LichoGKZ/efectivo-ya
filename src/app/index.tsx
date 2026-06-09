@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import Screen from '../components/Screen';
 import Button from '../components/Button';
 import { COLORS } from '../constants/colors';
+import Svg, { Path, Circle, Text as SvgText } from 'react-native-svg';
 
 export default function WelcomeScreen() {
   return (
@@ -12,7 +13,19 @@ export default function WelcomeScreen() {
         {/* Logo área */}
         <View style={styles.heroArea}>
           <View style={styles.logoBox}>
-            <Text style={styles.logoSymbol}>$</Text>
+            <Svg width={52} height={52} viewBox="0 0 52 52">
+              <Circle cx="26" cy="26" r="26" fill="#22C55E" />
+              <SvgText
+                x="26"
+                y="35"
+                textAnchor="middle"
+                fontSize="30"
+                fontWeight="bold"
+                fill="white"
+              >
+                $
+              </SvgText>
+            </Svg>
           </View>
           <Text style={styles.appName}>Efectivo Ya</Text>
           <Text style={styles.tagline}>Tu dinero, al instante.</Text>

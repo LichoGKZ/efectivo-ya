@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-nati
 import { router } from 'expo-router';
 import BottomNavigation from '../components/BottomNavigation';
 import { COLORS } from '../constants/colors';
+import { signOut } from '../services/auth';
 
 const MENU_ITEMS = [
   { icon: '👤', label: 'Información personal', route: null },
@@ -48,12 +49,15 @@ export default function ProfileScreen() {
         ))}
 
         {/* Cerrar sesión */}
-        <TouchableOpacity
-          style={styles.logoutBtn}
-          onPress={() => router.replace('/')}
-        >
-          <Text style={styles.logoutText}>🚪  Cerrar sesión</Text>
-        </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.logoutBtn}
+        onPress={async () => {
+          await signOut();
+          // _layout.tsx redirige automáticamente a '/'
+        }}
+      >
+        <Text style={styles.logoutText}>🚪  Cerrar sesión</Text>
+      </TouchableOpacity>
       </ScrollView>
       <BottomNavigation />
     </View>

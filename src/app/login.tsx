@@ -1,10 +1,11 @@
-// src/app/login.tsx  — Pantalla 2: Iniciar sesión
+// src/app/login.tsx
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useState } from 'react';
 import { router } from 'expo-router';
 import Screen from '../components/Screen';
 import Input from '../components/Input';
 import Button from '../components/Button';
+import { supabase } from '../services/supabase';
 import { COLORS } from '../constants/colors';
 
 export default function LoginScreen() {
@@ -16,14 +17,8 @@ export default function LoginScreen() {
   const validate = () => {
     const newErrors = { email: '', password: '' };
     let valid = true;
-    if (!email.trim()) {
-      newErrors.email = 'Ingresá tu correo o teléfono';
-      valid = false;
-    }
-    if (!password.trim()) {
-      newErrors.password = 'Ingresá tu contraseña';
-      valid = false;
-    }
+    if (!email.trim()) { newErrors.email = 'Ingresá tu correo'; valid = false; }
+    if (!password.trim()) { newErrors.password = 'Ingresá tu contraseña'; valid = false; }
     setErrors(newErrors);
     return valid;
   };
@@ -31,9 +26,15 @@ export default function LoginScreen() {
   const handleLogin = async () => {
     if (!validate()) return;
     setLoading(true);
-    // TODO: integrar con backend
-    await new Promise((r) => setTimeout(r, 1000));
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
+    if (error) {
+      Alert.alert('Error', error.message === 'Invalid login credentials'
+        ? 'Email o contraseña incorrectos'
+        : error.message
+      );
+      return;
+    }
     router.replace('/home');
   };
 
@@ -47,44 +48,33 @@ export default function LoginScreen() {
 
         <View style={styles.form}>
           <Input
-            label="Correo o teléfono"
-            placeholder="Ingresá tu correo o teléfono"
+            label="Correo electrónico"
+            placeholder="tu@email.com"
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
             autoCapitalize="none"
             error={errors.email}
           />
-
           <Input
             label="Contraseña"
-            placeholder="Ingresá tu contraseña"
+            placeholder="Tu contraseña"
             value={password}
             onChangeText={setPassword}
             secureTextEntry
             error={errors.password}
           />
-
           <TouchableOpacity style={styles.forgotBtn}>
             <Text style={styles.forgotText}>¿Olvidaste tu contraseña?</Text>
           </TouchableOpacity>
-
           <View style={{ marginTop: 8 }}>
-            <Button
-              title="Iniciar sesión"
-              onPress={handleLogin}
-              loading={loading}
-            />
+            <Button title="Iniciar sesión" onPress={handleLogin} loading={loading} />
           </View>
         </View>
 
-        <TouchableOpacity
-          onPress={() => router.push('/register')}
-          style={styles.registerRow}
-        >
+        <TouchableOpacity onPress={() => router.push('/register')} style={styles.registerRow}>
           <Text style={styles.registerText}>
-            ¿No tenés cuenta?{' '}
-            <Text style={styles.registerLink}>Crear cuenta</Text>
+            ¿No tenés cuenta? <Text style={styles.registerLink}>Crear cuenta</Text>
           </Text>
         </TouchableOpacity>
       </View>
@@ -93,46 +83,14 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  topSection: {
-    marginBottom: 32,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: COLORS.text,
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 15,
-    color: COLORS.textSecondary,
-  },
-  form: {
-    gap: 0,
-  },
-  forgotBtn: {
-    alignSelf: 'flex-end',
-    marginTop: -8,
-    marginBottom: 16,
-  },
-  forgotText: {
-    fontSize: 13,
-    color: COLORS.primary,
-    fontWeight: '600',
-  },
-  registerRow: {
-    alignItems: 'center',
-    marginTop: 24,
-  },
-  registerText: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-  },
-  registerLink: {
-    color: COLORS.primary,
-    fontWeight: '700',
-  },
+  container: { flex: 1, justifyContent: 'center' },
+  topSection: { marginBottom: 32 },
+  title: { fontSize: 28, fontWeight: '800', color: COLORS.text, marginBottom: 4 },
+  subtitle: { fontSize: 15, color: COLORS.textSecondary },
+  form: { gap: 0 },
+  forgotBtn: { alignSelf: 'flex-end', marginTop: -8, marginBottom: 16 },
+  forgotText: { fontSize: 13, color: COLORS.primary, fontWeight: '600' },
+  registerRow: { alignItems: 'center', marginTop: 24 },
+  registerText: { fontSize: 14, color: COLORS.textSecondary },
+  registerLink: { color: COLORS.primary, fontWeight: '700' },
 });
