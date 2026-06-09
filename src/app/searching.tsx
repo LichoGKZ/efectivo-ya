@@ -1,0 +1,145 @@
+// src/app/searching.tsx  — Pantalla 6: Buscando operador
+import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
+import { useEffect, useRef } from 'react';
+import { router } from 'expo-router';
+import { COLORS } from '../constants/colors';
+
+export default function SearchingScreen() {
+  const pulse1 = useRef(new Animated.Value(1)).current;
+  const pulse2 = useRef(new Animated.Value(1)).current;
+  const pulse3 = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    const createPulse = (anim: Animated.Value, delay: number) =>
+      Animated.loop(
+        Animated.sequence([
+          Animated.delay(delay),
+          Animated.timing(anim, { toValue: 2.5, duration: 1200, useNativeDriver: true }),
+          Animated.timing(anim, { toValue: 1, duration: 400, useNativeDriver: true }),
+        ])
+      );
+
+    const p1 = createPulse(pulse1, 0);
+    const p2 = createPulse(pulse2, 400);
+    const p3 = createPulse(pulse3, 800);
+    p1.start(); p2.start(); p3.start();
+
+    // Simular asignación de operador tras 3 segundos
+    const timer = setTimeout(() => {
+      router.replace('/operator-assigned');
+    }, 3000);
+
+    return () => {
+      p1.stop(); p2.stop(); p3.stop();
+      clearTimeout(timer);
+    };
+  }, []);
+
+  return (
+    <View style={styles.container}>
+      {/* Mapa con animación radial */}
+      <View style={styles.mapArea}>
+        <View style={styles.pulseContainer}>
+          {[pulse1, pulse2, pulse3].map((anim, i) => (
+            <Animated.View
+              key={i}
+              style={[
+                styles.pulseRing,
+                { transform: [{ scale: anim }], opacity: anim.interpolate({ inputRange: [1, 2.5], outputRange: [0.5, 0] }) },
+              ]}
+            />
+          ))}
+          <View style={styles.centerDot} />
+        </View>
+      </View>
+
+      {/* Info */}
+      <View style={styles.infoBox}>
+        <Text style={styles.title}>Buscando operador disponible...</Text>
+        <Text style={styles.subtitle}>
+          Estamos asignando un operador cercano para gestionar tu solicitud.
+        </Text>
+
+        <TouchableOpacity
+          style={styles.cancelBtn}
+          onPress={() => router.replace('/home')}
+        >
+          <Text style={styles.cancelText}>Cancelar</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
+  mapArea: {
+    flex: 1,
+    backgroundColor: COLORS.mapPlaceholder,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pulseContainer: {
+    width: 80,
+    height: 80,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pulseRing: {
+    position: 'absolute',
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    borderWidth: 2,
+    borderColor: COLORS.primary,
+    backgroundColor: COLORS.primaryLight,
+  },
+  centerDot: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: COLORS.primary,
+    zIndex: 1,
+  },
+  infoBox: {
+    padding: 28,
+    paddingBottom: 48,
+    backgroundColor: COLORS.background,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: COLORS.text,
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 24,
+  },
+  cancelBtn: {
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 40,
+  },
+  cancelText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: COLORS.text,
+  },
+});

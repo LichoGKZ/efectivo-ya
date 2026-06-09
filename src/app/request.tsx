@@ -1,76 +1,152 @@
-import { View, Text } from "react-native";
+// src/app/request.tsx  — Pantalla 4: Confirmar solicitud
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { router, useLocalSearchParams } from 'expo-router';
+import Screen from '../components/Screen';
+import Header from '../components/Header';
+import Button from '../components/Button';
+import { saveData, getData } from '../services/storage';
+import { COLORS } from '../constants/colors';
+import type { Operation, OperationType } from '../types';
 
-import Screen from "../components/Screen";
-import Button from "../components/Button";
-import { saveData, getData } from "../services/storage";
-import { router } from "expo-router";
+const TYPE_LABELS: Record<string, string> = {
+  retiro_domicilio: 'Retiro en domicilio',
+  entrega_direccion: 'Entrega en dirección',
+  transferencia: 'Transferencia de efectivo',
+  frecuentes: 'Dirección frecuente',
+};
 
 export default function RequestScreen() {
+  const { type } = useLocalSearchParams<{ type: string }>();
+  const opLabel = TYPE_LABELS[type ?? ''] ?? 'Entrega de efectivo';
+
+  const AMOUNT = 150000;
+  const COMMISSION = 3000;
+  const TOTAL = AMOUNT + COMMISSION;
+
+  const handleConfirm = async () => {
+    const existing = (await getData<Operation[]>('requests')) || [];
+
+    const newOp: Operation = {
+      id: Date.now().toString(),
+      type: (type ?? 'entrega_direccion') as OperationType,
+      status: 'buscando_operador',
+      amount: AMOUNT,
+      origin: 'Av. Colón 1234, CABA',
+      destination: 'San Martín 2450, CABA',
+      serviceCategory: 'auto_estandar',
+      commission: COMMISSION,
+      total: TOTAL,
+      date: new Date().toLocaleString('es-AR'),
+    };
+
+    await saveData('requests', [...existing, newOp]);
+    await saveData('current_operation', newOp);
+
+    router.push('/service-select');
+  };
+
   return (
-    <Screen>
-      <Text
-        style={{
-          fontSize: 28,
-          fontWeight: "bold",
-          marginBottom: 25,
-        }}
-      >
-        Confirmar solicitud
-      </Text>
+    <View style={{ flex: 1, backgroundColor: COLORS.background }}>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        <Header title="Confirmar solicitud" showBack />
 
-      <View
-        style={{
-          backgroundColor: "#F3F4F6",
-          height: 250,
-          borderRadius: 20,
-          marginBottom: 20,
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
-        <Text>Mapa (próximamente)</Text>
+        {/* Mapa placeholder */}
+        <View style={styles.mapPlaceholder}>
+          <Text style={styles.mapLabel}>🗺️ Mapa (próximamente)</Text>
+        </View>
+
+        {/* Info de la operación */}
+        <View style={styles.infoSection}>
+          <InfoRow icon="🟢" label="Ubicación de retiro" value="Av. Colón 1234, CABA" />
+          <InfoRow icon="🔴" label="Destino" value="San Martín 2450, CABA" />
+          <InfoRow icon="📋" label="Tipo de operación" value={opLabel} />
+          <InfoRow icon="💰" label="Monto a enviar" value={`$${AMOUNT.toLocaleString('es-AR')}`} />
+        </View>
+      </ScrollView>
+
+      {/* Botón fijo al fondo */}
+      <View style={styles.footer}>
+        <Button title="Confirmar solicitud" onPress={handleConfirm} />
       </View>
-
-      <Text>Origen: Av. Colón 1234</Text>
-
-      <Text style={{ marginTop: 10 }}>
-        Destino: San Martín 2450
-      </Text>
-
-      <Text style={{ marginTop: 10 }}>
-        Monto: $150.000
-      </Text>
-
-      <View style={{ marginTop: 25 }}>
-        <Button
-          title="Confirmar solicitud"
-          onPress={() => router.push("/tracking")}
-        />
-      </View>
-    </Screen>
+    </View>
   );
 }
 
-const createRequest = async () => {
-  const oldRequests =
-    (await getData("requests")) || [];
-
-  const newRequest = {
-    id: Date.now(),
-    amount: 150000,
-    address: "Av. Colón 1234",
-    status: "Pendiente",
-    date: new Date().toLocaleString(),
-  };
-
-  await saveData(
-    "requests",
-    [...oldRequests, newRequest]
+function InfoRow({ icon, label, value }: { icon: string; label: string; value: string }) {
+  return (
+    <View style={styles.infoRow}>
+      <Text style={styles.infoIcon}>{icon}</Text>
+      <View style={styles.infoText}>
+        <Text style={styles.infoLabel}>{label}</Text>
+        <Text style={styles.infoValue}>{value}</Text>
+      </View>
+    </View>
   );
+}
 
-  router.push("/tracking");
-};
-<Button
-  title="Confirmar solicitud"
-  onPress={createRequest}
-/>
+const styles = StyleSheet.create({
+  scroll: {
+    paddingHorizontal: 20,
+    paddingTop: 56,
+    paddingBottom: 100,
+  },
+  mapPlaceholder: {
+    height: 200,
+    borderRadius: 20,
+    backgroundColor: COLORS.mapPlaceholder,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: COLORS.primaryBorder,
+  },
+  mapLabel: {
+    fontSize: 15,
+    color: COLORS.primaryDark,
+  },
+  infoSection: {
+    backgroundColor: COLORS.background,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    overflow: 'hidden',
+  },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.divider,
+  },
+  infoIcon: {
+    fontSize: 16,
+  },
+  infoText: {
+    flex: 1,
+  },
+  infoLabel: {
+    fontSize: 11,
+    color: COLORS.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 1,
+  },
+  infoValue: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.text,
+  },
+  footer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 20,
+    paddingBottom: 32,
+    backgroundColor: COLORS.background,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+  },
+});

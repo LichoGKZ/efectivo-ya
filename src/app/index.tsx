@@ -1,51 +1,139 @@
-import { View, Text } from "react-native";
-import { router } from "expo-router";
-
-import Button from "../components/Button";
-import Screen from "../components/Screen";
+// src/app/index.tsx  — Pantalla 1: Bienvenida
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { router } from 'expo-router';
+import Screen from '../components/Screen';
+import Button from '../components/Button';
+import { COLORS } from '../constants/colors';
 
 export default function WelcomeScreen() {
   return (
     <Screen>
-      <View
-        style={{
-          flex: 1,
-          justifyContent: "center",
-        }}
-      >
-        <Text
-          style={{
-            fontSize: 42,
-            fontWeight: "bold",
-            color: "#22C55E",
-            textAlign: "center",
-          }}
-        >
-          Efectivo Ya
-        </Text>
+      <View style={styles.container}>
+        {/* Logo área */}
+        <View style={styles.heroArea}>
+          <View style={styles.logoBox}>
+            <Text style={styles.logoSymbol}>$</Text>
+          </View>
+          <Text style={styles.appName}>Efectivo Ya</Text>
+          <Text style={styles.tagline}>Tu dinero, al instante.</Text>
+        </View>
 
-        <Text
-          style={{
-            textAlign: "center",
-            marginTop: 10,
-            marginBottom: 50,
-          }}
-        >
-          Tu dinero, al instante.
-        </Text>
+        {/* Acciones */}
+        <View style={styles.actions}>
+          <Button
+            title="Iniciar sesión"
+            onPress={() => router.push('/login')}
+          />
 
-        <Button
-          title="Iniciar Sesión"
-          onPress={() => router.push("/login")}
-        />
+          <View style={styles.spacer} />
 
-        <View style={{ height: 12 }} />
+          <Button
+            title="Crear cuenta"
+            onPress={() => router.push('/register')}
+            variant="outline"
+          />
 
-        <Button
-          title="Crear Cuenta"
-          onPress={() => router.push("/register")}
-        />
+          <View style={styles.dividerRow}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>O continuá con</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          <View style={styles.socialRow}>
+            <TouchableOpacity style={styles.socialBtn}>
+              <Text style={styles.socialIcon}>G</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.socialBtn}>
+              <Text style={styles.socialIcon}>🍎</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.socialBtn}>
+              <Text style={styles.socialIcon}>📞</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </View>
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'space-between',
+    paddingBottom: 20,
+  },
+  heroArea: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  logoBox: {
+    width: 88,
+    height: 88,
+    borderRadius: 22,
+    backgroundColor: COLORS.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+    shadowColor: COLORS.primary,
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 8,
+  },
+  logoSymbol: {
+    fontSize: 42,
+    fontWeight: '800',
+    color: COLORS.textOnPrimary,
+  },
+  appName: {
+    fontSize: 36,
+    fontWeight: '800',
+    color: COLORS.primary,
+    letterSpacing: -0.5,
+  },
+  tagline: {
+    fontSize: 16,
+    color: COLORS.textSecondary,
+  },
+  actions: {
+    gap: 0,
+  },
+  spacer: { height: 12 },
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 20,
+    gap: 10,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: COLORS.border,
+  },
+  dividerText: {
+    fontSize: 13,
+    color: COLORS.textMuted,
+  },
+  socialRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 16,
+  },
+  socialBtn: {
+    width: 52,
+    height: 52,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.background,
+  },
+  socialIcon: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: COLORS.text,
+  },
+});

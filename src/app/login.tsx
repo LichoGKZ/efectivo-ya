@@ -1,77 +1,138 @@
-import { View, Text, TouchableOpacity } from "react-native";
-import { router } from "expo-router";
-
-import Screen from "../components/Screen";
-import Input from "../components/Input";
-import Button from "../components/Button";
+// src/app/login.tsx  — Pantalla 2: Iniciar sesión
+import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { useState } from 'react';
+import { router } from 'expo-router';
+import Screen from '../components/Screen';
+import Input from '../components/Input';
+import Button from '../components/Button';
+import { COLORS } from '../constants/colors';
 
 export default function LoginScreen() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({ email: '', password: '' });
+
+  const validate = () => {
+    const newErrors = { email: '', password: '' };
+    let valid = true;
+    if (!email.trim()) {
+      newErrors.email = 'Ingresá tu correo o teléfono';
+      valid = false;
+    }
+    if (!password.trim()) {
+      newErrors.password = 'Ingresá tu contraseña';
+      valid = false;
+    }
+    setErrors(newErrors);
+    return valid;
+  };
+
+  const handleLogin = async () => {
+    if (!validate()) return;
+    setLoading(true);
+    // TODO: integrar con backend
+    await new Promise((r) => setTimeout(r, 1000));
+    setLoading(false);
+    router.replace('/home');
+  };
+
   return (
     <Screen>
-      <View
-        style={{
-          flex: 1,
-          justifyContent: "center",
-        }}
-      >
-        <Text
-          style={{
-            fontSize: 32,
-            fontWeight: "bold",
-          }}
-        >
-          Iniciar sesión
-        </Text>
+      <View style={styles.container}>
+        <View style={styles.topSection}>
+          <Text style={styles.title}>Iniciar sesión</Text>
+          <Text style={styles.subtitle}>Bienvenido de nuevo</Text>
+        </View>
 
-        <Text
-          style={{
-            marginBottom: 30,
-            color: "#666",
-          }}
-        >
-          Bienvenido nuevamente
-        </Text>
+        <View style={styles.form}>
+          <Input
+            label="Correo o teléfono"
+            placeholder="Ingresá tu correo o teléfono"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            error={errors.email}
+          />
 
-        <Input placeholder="Correo o teléfono" />
+          <Input
+            label="Contraseña"
+            placeholder="Ingresá tu contraseña"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            error={errors.password}
+          />
 
-        <Input
-          placeholder="Contraseña"
-          secureTextEntry
-        />
+          <TouchableOpacity style={styles.forgotBtn}>
+            <Text style={styles.forgotText}>¿Olvidaste tu contraseña?</Text>
+          </TouchableOpacity>
 
-        <Button
-          title="Iniciar sesión"
-          onPress={() => router.replace("/home")}
-        />
-
-        <View style={{ height: 12 }} />
-
-        <Button
-          title="Crear cuenta"
-          onPress={() => router.push("/register")}
-        />
-
-        <View style={{ height: 20 }} />
+          <View style={{ marginTop: 8 }}>
+            <Button
+              title="Iniciar sesión"
+              onPress={handleLogin}
+              loading={loading}
+            />
+          </View>
+        </View>
 
         <TouchableOpacity
-          onPress={() => router.push("/dev")}
-          style={{
-            backgroundColor: "#EF4444",
-            padding: 12,
-            borderRadius: 10,
-          }}
+          onPress={() => router.push('/register')}
+          style={styles.registerRow}
         >
-          <Text
-            style={{
-              color: "#fff",
-              textAlign: "center",
-              fontWeight: "bold",
-            }}
-          >
-            DEV PANEL
+          <Text style={styles.registerText}>
+            ¿No tenés cuenta?{' '}
+            <Text style={styles.registerLink}>Crear cuenta</Text>
           </Text>
         </TouchableOpacity>
       </View>
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  topSection: {
+    marginBottom: 32,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: COLORS.text,
+    marginBottom: 4,
+  },
+  subtitle: {
+    fontSize: 15,
+    color: COLORS.textSecondary,
+  },
+  form: {
+    gap: 0,
+  },
+  forgotBtn: {
+    alignSelf: 'flex-end',
+    marginTop: -8,
+    marginBottom: 16,
+  },
+  forgotText: {
+    fontSize: 13,
+    color: COLORS.primary,
+    fontWeight: '600',
+  },
+  registerRow: {
+    alignItems: 'center',
+    marginTop: 24,
+  },
+  registerText: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+  },
+  registerLink: {
+    color: COLORS.primary,
+    fontWeight: '700',
+  },
+});
